@@ -7,14 +7,14 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>World Gym Guest Autofiller <span style="font-size: 14px; color: #666; margin-top: -6px;">by Gabriel Ungur</span></h1>
+    <h1>World Gym Guest Autofiller<span style="font-size: 14px; color: #666; margin-top: -6px;">by Gabriel Ungur</span></h1>
     <p>
       Fill it <u><b>once</b></u> and <u><b>never again.</b></u>  
       You can watch <a href="https://www.youtube.com/watch?v=YOUR_VIDEO_ID" target="_blank" rel="noopener">this short video tutorial</a> to set it up.
       <br><br>
       This software will allow you to automatically fill out the World's Gym guest form.
 
-      <br><br>
+      <br><br> 
       If this software helped you out, please feel free to press the button below. It let's me know how many people this small project helped!
       <br><br>
       Thanks! :)
@@ -22,6 +22,7 @@
       <button id="likeBtn">This helped me 💪</button>
         <span id="likeCount"></span>
 
+        <!-- Track how many people I helped. -->
         <script>
         fetch("/api/likes")
         .then(r => r.json())
@@ -111,9 +112,7 @@
         <input id="promo" placeholder="Required for some guest types" />
 
         <div class="btns">
-          <button class="primary" id="saveBtn">Save</button>
-          <button id="loadBtn">Load</button>
-          <button class="danger" id="clearBtn">Clear saved data</button>
+          <button class="primary" id="saveBtn">Generate</button>
         </div>
         <div class="ok" id="status"></div>
         <div class="hint">

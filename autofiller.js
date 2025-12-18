@@ -1,256 +1,195 @@
-const STORAGE_KEY = "wg_formData_v1"; // store on user device
+/**
+ * World Gym - Guest Autofiller
+ * 
+ * @author: Gabriel Ungur
+ */
 
-    const els = {
-      email:      document.getElementById("email"),
-      firstName:  document.getElementById("firstName"),
-      lastName:   document.getElementById("lastName"),
-      year:       document.getElementById("year"),
-      street:     document.getElementById("street"),
-      city:       document.getElementById("city"),
-      state:      document.getElementById("state"),
-      postal:     document.getElementById("postal"),
-      phone:      document.getElementById("phone"),
-      promo:      document.getElementById("promo"),
-      guestType:  document.getElementById("guestType"),
-      gender:     document.getElementById("gender"),
-      status:     document.getElementById("status"),
-      bookmarkletBox: document.getElementById("bookmarkletBox"),
-    };
+const $ = (id) => document.getElementById(id);
 
-    function updatePromoVisibility() {
-      const gt = els.guestType.value;
-      if (gt === "GVM" || gt === "PD") {
-        els.promo.parentElement.style.display = "";
-        els.promo.required = true;
-      } else {
-        els.promo.required = false;
-        els.promo.value = "";
-        els.promo.parentElement.style.display = "";
-      }
-    }
+// Cache inputs
+const els = {
+  email: $("email"),
+  firstName: $("firstName"),
+  lastName: $("lastName"),
+  year: $("year"),
+  street: $("street"),
+  city: $("city"),
+  state: $("state"),
+  postal: $("postal"),
+  phone: $("phone"),
+  promo: $("promo"),
+  guestType: $("guestType"),
+  gender: $("gender"),
+  status: $("status"),
+  bookmarkletBox: $("bookmarkletBox"),
+};
 
-    els.guestType.addEventListener("change", updatePromoVisibility);
+const btns = {
+  save: $("saveBtn"), // generates bookmark with saved data
+  copy: $("copyBookmarkletBtn"), // copy
+};
 
-    function getDataFromInputs() {
-      return {
-        email: els.email.value.trim(),
-        firstName: els.firstName.value.trim(),
-        lastName: els.lastName.value.trim(),
-        year: els.year.value.trim(),
-        street: els.street.value.trim(),
-        city: els.city.value.trim(),
-        state: els.state.value.trim(),
-        postal: els.postal.value.trim(),
-        phone: els.phone.value.trim(),
-        promo: els.promo.value.trim(),
-        guestType: els.guestType.value.trim(),
-        gender: els.gender.value,
-      };
-    }
+/**
+ * Status text
+ */
+function setStatus(msg) {
+  if (!els.status) return;
+  els.status.textContent = msg || "";
+}
 
-    function setInputsFromData(d) {
-      els.email.value = d.email || "";
-      els.firstName.value = d.firstName || "";
-      els.lastName.value = d.lastName || "";
-      els.year.value = d.year || "";
-      els.street.value = d.street || "";
-      els.city.value = d.city || "";
-      els.state.value = d.state || "";
-      els.postal.value = d.postal || "";
-      els.phone.value = d.phone || "";
-      els.promo.value = d.promo || "";
-      els.guestType.value = d.guestType || "";
-      els.gender.value = d.gender || "";
-    }
+/**
+ * Update guest type (e.g. member of VIP)
+ */
+function updatePromoVisibility() {
+  const needsCode = ["GVM", "PD"].includes(els.guestType?.value);
+  if (!els.promo) return;
 
-    function save() {
-      const data = getDataFromInputs();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      els.status.textContent = "Saved on this device.";
-      refreshBookmarklet();
-    }
+  els.promo.required = needsCode;
+  if (!needsCode) els.promo.value = "";
+}
 
-    function load() {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) {
-        els.status.textContent = "No saved data found.";
-        refreshBookmarklet();
-        return;
-      }
-      setInputsFromData(JSON.parse(raw));
-      els.status.textContent = "Loaded.";
-      refreshBookmarklet();
-    }
+els.guestType?.addEventListener("change", () => {
+  updatePromoVisibility();
+});
 
-    function clearSaved() {
-      localStorage.removeItem(STORAGE_KEY);
-      els.status.textContent = "Cleared.";
-      refreshBookmarklet();
-    }
+/**
+ * read user input
+ */
+function readForm() {
+  const v = (el) => (el?.value ?? "").trim();
 
-    // --- Autofill payload to run on ggpx page ---
-    // Uses your selectors and agreement-click logic.
-    function buildAutofillIIFE() {
-      // We inject the user's saved data directly into the bookmarklet at tap-time:
-      const data = getDataFromInputs();
+  return {
+    email: v(els.email),
+    firstName: v(els.firstName),
+    lastName: v(els.lastName),
+    year: v(els.year),
+    street: v(els.street),
+    city: v(els.city),
+    state: v(els.state),
+    postal: v(els.postal),
+    phone: v(els.phone),
+    promo: v(els.promo),
+    guestType: v(els.guestType),
+    gender: els.gender?.value ?? "",
+  };
+}
 
-      // Minimal escaping for JS string literals:
-      const esc = (s) => (s ?? "").replace(/\\/g, "\\\\").replace(/`/g, "\\`").replace(/\$/g, "\\$");
-
-      return `
+/**
+ * build the JS payload
+ */
+function buildBookmarkletPayload(data) {
+  return `
 (() => {
-  const formData = ${JSON.stringify(data)};
-  const startedAt = Date.now();
-  const MAX_WAIT_MS = 8000;
+  const data = ${JSON.stringify(data)};
 
-  function waitFor(selector, callback) {
-    const el = document.querySelector(selector);
-    if (el) return callback(el);
-
-    const timeout = setTimeout(() => {
-      const existsNow = !!document.querySelector(selector);
-      if (!existsNow) {
-        alert("Autofill could not find " + selector + ". The form page may have changed.");
-      }
-    }, MAX_WAIT_MS);
-
-    const obs = new MutationObserver(() => {
-      const found = document.querySelector(selector);
-      if (!found) return;
-      clearTimeout(timeout);
+  const waitFor = (selector, cb) => {
+    if (document.querySelector(selector)) return cb();
+    new MutationObserver((_, obs) => {
+      if (!document.querySelector(selector)) return;
       obs.disconnect();
-      callback(found);
-    });
+      cb();
+    }).observe(document.body, { childList: true, subtree: true });
+  };
 
-    obs.observe(document.body, { childList: true, subtree: true });
-  }
+  const set = (selector, val) => {
+    const el = document.querySelector(selector);
+    if (!el) return;
+    el.value = val || "";
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  };
 
-  function clickAgreement(inputSelector) {
-    const input = document.querySelector(inputSelector);
-    if (!input) return false;
-    if (input.disabled) return false;
-    if (input.checked === true) return true;
+  const click = (selector) => document.querySelector(selector)?.click();
 
-    try {
-      input.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerType: 'mouse' }));
-      input.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-      input.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'mouse' }));
-      input.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
-      input.click();
-    } catch (_) {}
+  waitFor("#Email", () => {
+    set("#Email", data.email);
+    set("#FirstName", data.firstName);
+    set("#LastName", data.lastName);
+    set("#YearOfBirth", data.year);
+    set("#StreetAddress", data.street);
+    set("#City", data.city);
+    set("#StateProv", data.state);
+    set("#PostalCode", data.postal);
+    set("#PhoneMobile", data.phone);
+    set("#PromoCode", data.promo);
 
-    if (input.checked === true) return true;
-
-    const desc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'checked');
-    const nativeCheckedSetter = desc && typeof desc.set === 'function' ? desc.set : null;
-    if (nativeCheckedSetter) nativeCheckedSetter.call(input, true);
-    else input.checked = true;
-
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-
-    const clickable = input.closest('label') || input.parentElement;
-    if (clickable) {
-      try { clickable.dispatchEvent(new MouseEvent('click', { bubbles: true })); } catch (_) {}
+    const gt = document.querySelector("#GuestPassType");
+    if (gt && data.guestType) {
+      gt.value = data.guestType;
+      gt.dispatchEvent(new Event("change", { bubbles: true }));
     }
-    return input.checked === true;
-  }
 
-  function runAutofill() {
-    waitFor('#Email', () => {
-      const $ = s => document.querySelector(s);
+    if (data.gender === "M") click("#GenderM");
+    if (data.gender === "F") click("#GenderF");
 
-      // Text fields
-      if ($('#Email')) $('#Email').value = formData.email || '';
-      if ($('#FirstName')) $('#FirstName').value = formData.firstName || '';
-      if ($('#LastName')) $('#LastName').value = formData.lastName || '';
-      if ($('#YearOfBirth')) $('#YearOfBirth').value = formData.year || '';
-      if ($('#StreetAddress')) $('#StreetAddress').value = formData.street || '';
-      if ($('#City')) $('#City').value = formData.city || '';
-      if ($('#StateProv')) $('#StateProv').value = formData.state || '';
-      if ($('#PostalCode')) $('#PostalCode').value = formData.postal || '';
-      if ($('#PhoneMobile')) $('#PhoneMobile').value = formData.phone || '';
-      if ($('#PromoCode')) $('#PromoCode').value = formData.promo || '';
-
-      // Guest type
-      const guestType = $('#GuestPassType');
-      if (guestType && formData.guestType) {
-        guestType.value = formData.guestType;
-        guestType.dispatchEvent(new Event('input', { bubbles: true }));
-        guestType.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-
-      // Gender
-      const male = $('#GenderM');
-      const female = $('#GenderF');
-      if (male) male.checked = false;
-      if (female) female.checked = false;
-      if (formData.gender === 'M' && male) male.checked = true;
-      if (formData.gender === 'F' && female) female.checked = true;
-      male?.dispatchEvent(new Event('change', { bubbles: true }));
-      female?.dispatchEvent(new Event('change', { bubbles: true }));
-
-      // Agreements
-      const agreementSelectors = [
-        '#GuestServicesAgreement1',
-        '#GuestServicesAgreement2',
-        '#GuestServicesAgreement3',
-        '#Agreement'
-      ];
-
-      let attempts = 0;
-      const maxAttempts = 12;
-      const interval = setInterval(() => {
-        attempts++;
-        const results = agreementSelectors.map(sel => document.querySelector(sel) ? clickAgreement(sel) : false);
-        const allChecked = results.every(Boolean);
-        if (allChecked || attempts >= maxAttempts) {
-          clearInterval(interval);
-        }
-      }, 250);
-    });
-  }
-
-  runAutofill();
+    [
+      "#GuestServicesAgreement1",
+      "#GuestServicesAgreement2",
+      "#GuestServicesAgreement3",
+      "#Agreement",
+    ].forEach(click);
+  });
 })();
-      `.trim();
-    }
+`.trim();
+}
 
-    function toBookmarklet(js) {
-      // Make it bookmark-friendly: remove newlines and extra spaces
-      const min = js
-        .replace(/\/\*[\s\S]*?\*\//g, "")   // strip block comments
-        .replace(/\/\/.*$/gm, "")           // strip line comments
-        .replace(/\s+/g, " ")               // collapse whitespace
-        .trim();
+/**
+ * turn JS into a URL (for bookmark)
+ */
+function toBookmarklet(js) {
+  return (
+    "javascript:" +
+    js
+      .replace(/\/\*[\s\S]*?\*\//g, "") // strip block comments
+      .replace(/\/\/.*$/gm, "") // strip line comments
+      .replace(/\s+/g, " ") // remove whitespace
+      .trim()
+  );
+}
 
-      return "javascript:" + min;
-    }
+/**
+ * Generate + show the bookmarklet snippet
+ */
+function refreshBookmarklet(loud = true) {
+  if (!els.bookmarkletBox) return;
 
-    function refreshBookmarklet() {
-      const iife = buildAutofillIIFE();
-      const bm = toBookmarklet(iife);
-      els.bookmarkletBox.value = bm;
-    }
+  updatePromoVisibility();
+  const data = readForm();
+  const payload = buildBookmarkletPayload(data);
+  els.bookmarkletBox.value = toBookmarklet(payload);
 
-    async function copyBookmarklet() {
-      refreshBookmarklet();
-      const text = els.bookmarkletBox.value || "";
-      try {
-        await navigator.clipboard.writeText(text);
-        els.status.textContent = "Bookmarklet copied.";
-      } catch {
-        els.bookmarkletBox.focus();
-        els.bookmarkletBox.select();
-        document.execCommand("copy");
-        els.status.textContent = "Bookmarklet selected — copy it manually.";
-      }
-    }
+  if (loud) setStatus("Bookmarklet updated. Copy it and paste it into your bookmark URL.");
+}
 
-    document.getElementById("saveBtn").addEventListener("click", save);
-    document.getElementById("loadBtn").addEventListener("click", load);
-    document.getElementById("clearBtn").addEventListener("click", clearSaved);
-    document.getElementById("copyBookmarkletBtn").addEventListener("click", copyBookmarklet);
+/**
+ * copy the bookmarklet to clipboard
+ */
+async function copyBookmarklet() {
+  refreshBookmarklet(false);
 
-    // Init
-    load();
+  const text = els.bookmarkletBox?.value || "";
+  if (!text) {
+    setStatus("Couldn’t generate the bookmarklet. (Missing bookmarkletBox?)");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    setStatus("Copied. Now paste it into your bookmark URL.");
+  } catch {
+    els.bookmarkletBox.focus();
+    els.bookmarkletBox.select();
+    document.execCommand("copy");
+    setStatus("Selected. Copy it manually, then paste into your bookmark URL.");
+  }
+}
+
+// buttons
+btns.copy?.addEventListener("click", copyBookmarklet);
+
+// “save”: update the generated bookmarklet snippet.
+btns.save?.addEventListener("click", () => refreshBookmarklet(true));
+
+// init
+refreshBookmarklet(false);
+setStatus("Fill your info, then tap Save (or Copy bookmarklet).");
