@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>World Gym - Autofiller</title>
+</head>
+<body>
+  <div class="wrap">
+    <h1>World Gym Guest Autofiller <span style="font-size: 14px; color: #666; margin-top: -6px;">by Gabriel Ungur</span></h1>
+    <p>
+      Fill it <u><b>once</b></u> and <u><b>never again.</b></u>  
+      You can watch <a href="https://www.youtube.com/watch?v=YOUR_VIDEO_ID" target="_blank" rel="noopener">this short video tutorial</a> to set it up.
+      <br><br>
+      This software will allow you to automatically fill out the World's Gym guest form.
+
+      <br><br>
+      If this software helped you out, please feel free to press the button below. It let's me know how many people this small project helped!
+      <br><br>
+      Thanks! :)
+      <br><br>
+      <button id="likeBtn">This helped me 💪</button>
+        <span id="likeCount"></span>
+
+        <script>
+        fetch("/api/likes")
+        .then(r => r.json())
+        .then(d => likeCount.textContent = d.count);
+
+        likeBtn.onclick = () => {
+        fetch("/api/likes", { method: "POST" })
+            .then(r => r.json())
+            .then(d => likeCount.textContent = d.count);
+        };
+        </script>
+    </p>
+
+    <div class="grid">
+      <div class="card">
+        <h2>1. Save your data</h2>
+        <div style="font-size: 12px; color: #666; margin-top: -6px;">
+          Privacy is key. <br>I <u>do not collect any of your data</u>. Everything you input will save on 
+          your device.
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Email</label>
+            <input id="email" autocomplete="email" inputmode="email" />
+          </div>
+          <div>
+            <label>Phone</label>
+            <input id="phone" autocomplete="tel" inputmode="tel" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>First name</label>
+            <input id="firstName" autocomplete="given-name" />
+          </div>
+          <div>
+            <label>Last name</label>
+            <input id="lastName" autocomplete="family-name" />
+          </div>
+        </div>
+
+        <div class="row3">
+          <div>
+            <label>Year of birth</label>
+            <input id="year" inputmode="numeric" placeholder="1999" />
+          </div>
+          <div>
+            <label>Gender</label>
+            <select id="gender">
+              <option value="">(leave blank)</option>
+              <option value="M">M</option>
+              <option value="F">F</option>
+            </select>
+          </div>
+          <div>
+            <label>Guest type</label>
+            <select id="guestType">
+              <option value="">(choose one)</option>
+              <option value="GVM">Guest of a VIP Member</option>
+              <option value="GPC">Free trial</option>
+              <option value="PD">Purchase a day access</option>
+            </select>
+          </div>
+        </div>
+
+        <label>Street</label>
+        <input id="street" autocomplete="street-address" />
+
+        <div class="row3">
+          <div>
+            <label>City</label>
+            <input id="city" autocomplete="address-level2" />
+          </div>
+          <div>
+            <label>State/Prov</label>
+            <input id="state" autocomplete="address-level1" />
+          </div>
+          <div>
+            <label>Postal</label>
+            <input id="postal" autocomplete="postal-code" />
+          </div>
+        </div>
+
+        <label>Promo / VIP code</label>
+        <input id="promo" placeholder="Required for some guest types" />
+
+        <div class="btns">
+          <button class="primary" id="saveBtn">Save</button>
+          <button id="loadBtn">Load</button>
+          <button class="danger" id="clearBtn">Clear saved data</button>
+        </div>
+        <div class="ok" id="status"></div>
+        <div class="hint">
+          For business inquiries (software or web development), feel free to contact me at <a href="mailto:help@sitefly.ca">help@sitefly.ca</a>.
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>2. Add your "bookmark autofiller"</h2>
+
+        <div class="btns">
+          <a class="btn primary" id="openFormBtn" href="https://www.ggpx.info/guestreg" target="_blank" rel="noopener">
+            Open World Gym form
+          </a>
+          <button id="copyBookmarkletBtn">Copy bookmarklet</button>
+        </div>
+
+        <p class="hint">
+          You will use the following URL to create a bookmark. When you scan the QR code (or open the link above)
+          you can press on the bookmark that you created and the page will autofill.
+        </p>
+
+        <h2 style="margin-top:14px;">Code snippet (paste into your bookmark URL)</h2>
+        <textarea id="bookmarkletBox" class="mono" readonly></textarea>
+
+        <h2 style="margin-top:14px;">iPhone setup steps</h2>
+        <ol class="steps">
+          <li>Tap <b>Open World Gym form</b></li>
+          <li>Create a bookmark in your browser (Share → <b>Add Bookmark</b>).</li>
+          <li>Edit that bookmark’s URL and paste the code snippet from above.</li>
+          <li>Next time you visit the gym: <br>scan QR → page opens → tap your bookmark → it autofills.</li>
+        </ol>
+      </div>
+    </div>
+            <p class="hint">
+          <strong>Note:</strong> This autofiller has been tested on <b>Safari</b> and <b>Chrome (iOS)</b> and works as expected.  
+            Firefox on iOS is not supported, as it does not reliably allow users to run code snippets via bookmarks and may refresh the page instead.
+
+            <br><br>
+
+            If you use <b>Firefox on desktop</b>, you can install the
+            <a href="https://addons.mozilla.org/en-CA/firefox/addon/world-gym-guest-autofill/?utm_source=addons.mozilla.org&utm_medium=referral&utm_content=search" target="_blank" rel="noopener">browser extension</a>
+            to autofill the form automatically after scanning the QR code.
+            <br>
+            <br>
+            <br>
+        </p>
+  </div>
+
+  <link rel="stylesheet" href="/index.css">
+  <script src="/autofiller.js"></script>
+</body>
+</html>
