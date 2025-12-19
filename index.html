@@ -18,23 +18,10 @@
       <br><br> 
       If this helped you out, please feel free to press the button below. It let's me know how many people this project helped!
       <br><br>
-      Thanks! :)
-      <br><br>
-      <button id="likeBtn">This helped me 💪</button>
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLSdeduzXv-FKjMdgvy9EPPmo51yII5TyQAyoUb5vcb7Z1D4jpg/viewform?usp=header" target="_blank" rel="noopener">
+        <button id="likeBtn">This helped me 💪</button>
+      </a>
         <span id="likeCount"></span>
-
-        <!-- Track how many people I helped. -->
-        <script>
-        fetch("/api/likes")
-        .then(r => r.json())
-        .then(d => likeCount.textContent = d.count);
-
-        likeBtn.onclick = () => {
-        fetch("/api/likes", { method: "POST" })
-            .then(r => r.json())
-            .then(d => likeCount.textContent = d.count);
-        };
-        </script>
     </p>
 
     <div class="grid">
