@@ -38,6 +38,15 @@ function setStatus(msg) {
 }
 
 /**
+ * format phone as xxx-xxx-xxxx
+ */
+function formatPhone(input) {
+  const digits = (input || "").replace(/\D/g, "").slice(0, 10);
+  if (digits.length < 10) return input;
+  return `${digits.slice(0,3)}-${digits.slice(3,6)}-${digits.slice(6)}`;
+}
+
+/**
  * Update guest type (e.g. member of VIP)
  */
 function updatePromoVisibility() {
@@ -67,7 +76,7 @@ function readForm() {
     city: v(els.city),
     state: v(els.state),
     postal: v(els.postal),
-    phone: v(els.phone),
+    phone: formatPhone(v(els.phone)),
     promo: v(els.promo),
     guestType: v(els.guestType),
     gender: els.gender?.value ?? "",
