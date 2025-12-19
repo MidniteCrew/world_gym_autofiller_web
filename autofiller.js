@@ -167,7 +167,7 @@ function refreshBookmarklet(loud = true) {
   const payload = buildBookmarkletPayload(data);
   els.bookmarkletBox.value = toBookmarklet(payload);
 
-  if (loud) setStatus("Bookmarklet updated. Copy it and paste it into your bookmark URL.");
+  if (loud) setStatus("Bookmark URL updated. Copy it and paste it into your bookmark URL.");
 }
 
 /**
