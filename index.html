@@ -10,7 +10,8 @@
     <h1>World Gym Guest Autofiller<span style="font-size: 14px; color: #666; margin-top: -6px;"> by Gabriel U.</span></h1>
     <p>
       Fill it <u><b>once</b></u> and <u><b>never again.</b></u>  
-      You can watch <a href="https://www.youtube.com/watch?v=YOUR_VIDEO_ID" target="_blank" rel="noopener">this short video tutorial</a> to set it up.
+      You can watch <button id="openVideo" style="background:none;border:none;color:#0066cc;text-decoration:underline;cursor:pointer;padding:0;">
+      this short video tutorial</button> to set it up.
       <br><br>
       This software will allow you to automatically fill out the World's Gym guest form.
 
@@ -162,7 +163,25 @@
         </p>
   </div>
 
+
+  <div id="videoModal" class="video-modal">
+    <div class="video-box">
+        <button class="close-btn" id="closeVideo">×</button>
+        <video
+            id="tutorialVideo"
+            controls
+            playsinline
+            preload="metadata">
+            <source src="/tutorial.mp4" type="video/mp4">
+        </video>
+    </div>
+   </div>
+
+
+
   <link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="/video.css">
   <script src="/autofiller.js"></script>
+  <script src="/video.js"></script>
 </body>
 </html>
